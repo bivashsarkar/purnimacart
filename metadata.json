@@ -1,0 +1,6 @@
+{
+  "name": "PurnimaCart",
+  "description": "Premium E-commerce storefront with curated artisanal toys, couture dresses, organic chocolates, and interactive shopping cart.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

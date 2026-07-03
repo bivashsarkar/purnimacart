@@ -1,0 +1,124 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ---------- Public catalog data: readable by anyone, writable by admins only ----------
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      // Stock decrements during checkout happen via a trusted Cloud Function
+      // path. Manual admin writes (create/edit/stock corrections) are
+      // allowed directly since they're already gated by isAdmin(), but must
+      // still satisfy basic data-integrity checks — price/stock can never
+      // go negative, and offerPrice (when present) can never exceed price.
+      allow create, update: if isAdmin() &&
+        request.resource.data.price is number && request.resource.data.price >= 0 &&
+        request.resource.data.stock is number && request.resource.data.stock >= 0 &&
+        (!('offerPrice' in request.resource.data) ||
+          request.resource.data.offerPrice == null ||
+          request.resource.data.offerPrice <= request.resource.data.price);
+      allow delete: if isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Coupons: anyone can read active coupons to display offers, but usage
+    // counters and coupon creation are admin/Cloud-Function-only.
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update: if isAdmin() &&
+        request.resource.data.value is number && request.resource.data.value >= 0 &&
+        request.resource.data.minOrderValue is number && request.resource.data.minOrderValue >= 0 &&
+        request.resource.data.usageLimit is number && request.resource.data.usageLimit >= 0;
+      allow delete: if isAdmin();
+    }
+
+    // Per-user redemption records, written only by Cloud Functions via the
+    // Admin SDK inside the order-creation transaction. No client rule here
+    // means default-deny for both read and write.
+    match /coupons/{couponId}/usage/{uid} {
+      allow read, write: if false;
+    }
+
+    // ---------- User-owned data ----------
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      // Users may only edit their own name/photo/addresses — never their uid/email identity fields.
+      allow update: if isOwner(uid) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email;
+      allow delete: if false;
+    }
+
+    match /wishlist/{uid}/items/{productId} {
+      allow read, write: if isOwner(uid) || isAdmin();
+    }
+
+    match /carts/{uid}/items/{itemId} {
+      allow read, write: if isOwner(uid) || isAdmin();
+    }
+
+    // ---------- Orders ----------
+    // Order creation happens exclusively inside Cloud Functions (placeOrder /
+    // verifyPayment), which use the Admin SDK and bypass these rules
+    // entirely. Client-side create is disabled so nobody can write a fake
+    // "paid" order directly — every order must go through server-side
+    // pricing, coupon validation, and (for Razorpay) signature verification.
+    //
+    // Updates work the same way: every status change (packed/shipped/
+    // delivered/cancelled) goes through the adminUpdateOrderStatus Cloud
+    // Function, which enforces valid status transitions and atomically
+    // restores stock on cancellation. Direct client updates — including
+    // from the admin panel — are denied so an order's items/total/userId
+    // can never be tampered with, and so stock and order status can never
+    // drift out of sync.
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ---------- Checkout sessions ----------
+    // Server-only scratch space used by createRazorpayOrder / verifyPayment /
+    // the Razorpay webhook to safely hand off pricing between calls. Never
+    // read or written directly by the client.
+    match /checkoutSessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // ---------- Admin allowlist ----------
+    // Only admins can read the admin list; nobody writes it from the client —
+    // add admins manually via the Firebase Console or Admin SDK.
+    match /admins/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

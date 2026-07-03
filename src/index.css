@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --brand-primary: #bb0012;
+  --brand-primary-hover: #9a000e;
+  --brand-background: #fff8f7;
+  --brand-on-background: #291715;
+  --brand-surface: #fff8f7;
+  --brand-surface-dim: #f5d2ce;
+  --brand-surface-bright: #fff8f7;
+  --brand-surface-container-lowest: #ffffff;
+  --brand-surface-container-low: #fff0ee;
+  --brand-surface-container: #ffe9e6;
+  --brand-surface-container-high: #ffe2de;
+  --brand-surface-container-highest: #fedbd6;
+  --brand-on-surface: #291715;
+  --brand-on-surface-variant: #5e3f3b;
+  --brand-outline: #936e6a;
+  --brand-outline-variant: #e8bcb7;
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", sans-serif;
+  
+  --color-primary: var(--brand-primary);
+  --color-primary-hover: var(--brand-primary-hover);
+  --color-background: var(--brand-background);
+  --color-on-background: var(--brand-on-background);
+  --color-surface: var(--brand-surface);
+  --color-surface-dim: var(--brand-surface-dim);
+  --color-surface-bright: var(--brand-surface-bright);
+  --color-surface-container-lowest: var(--brand-surface-container-lowest);
+  --color-surface-container-low: var(--brand-surface-container-low);
+  --color-surface-container: var(--brand-surface-container);
+  --color-surface-container-high: var(--brand-surface-container-high);
+  --color-surface-container-highest: var(--brand-surface-container-highest);
+  --color-on-surface: var(--brand-on-surface);
+  --color-on-surface-variant: var(--brand-on-surface-variant);
+  --color-outline: var(--brand-outline);
+  --color-outline-variant: var(--brand-outline-variant);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom styles for hidden scrollbar */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth active state transitions */
+.active-nav-item {
+  color: var(--brand-primary);
+  font-weight: 700;
+  border-bottom: 2px solid var(--brand-primary);
+}
+
+.product-card-shadow {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.product-card-shadow:hover {
+  box-shadow: 0 20px 40px rgba(187,0,18,0.06);
+  transform: translateY(-4px);
+}

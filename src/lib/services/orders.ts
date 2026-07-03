@@ -1,0 +1,88 @@
+// Order service — orders/{orderId}
+import {
+  collection, doc, getDoc, getDocs, onSnapshot, query, where, orderBy,
+} from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../firebase';
+import type { FirestoreOrder, OrderItem, Address, PaymentMethod, OrderStatus } from '../../types/firestore';
+
+const COL = 'orders';
+
+export interface CreateOrderInput {
+  userId: string;
+  items: OrderItem[];
+  addressSnapshot: Address;
+  subtotal: number;
+  deliveryCharge: number;
+  discount: number;
+  total: number;
+  paymentMethod: PaymentMethod;
+  couponCode?: string;
+}
+
+// DEPRECATED as of Phase 4: order creation now happens exclusively via the
+// placeOrder / verifyPayment Cloud Functions (see src/lib/services/checkout.ts),
+// which price the cart from live Firestore data, validate coupons server-side,
+// and atomically deduct stock. firestore.rules also denies direct client
+// writes to /orders now, so calling this will fail with a permission error —
+// kept only so old imports fail loudly and obviously instead of silently.
+export async function createOrder(_input: CreateOrderInput): Promise<string> {
+  throw new Error(
+    'createOrder() is disabled. Use placeCodOrder() or createRazorpayOrder()/verifyPayment() from src/lib/services/checkout.ts instead.'
+  );
+}
+
+export async function getOrderById(orderId: string): Promise<FirestoreOrder | null> {
+  try {
+    const snap = await getDoc(doc(db, COL, orderId));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as FirestoreOrder) : null;
+  } catch (error: any) {
+    console.error(error);
+    throw error;
+  }
+}
+
+export async function getUserOrders(uid: string): Promise<FirestoreOrder[]> {
+  try {
+    const q = query(collection(db, COL), where('userId', '==', uid), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreOrder));
+  } catch (error: any) {
+    console.error(error);
+    throw error;
+  }
+}
+
+// ---------- Admin ----------
+
+// Realtime feed of every order, newest first — used by the admin Orders
+// screen and the Dashboard. Requires admins/{uid} per firestore.rules.
+export function subscribeAllOrdersAdmin(
+  onData: (orders: FirestoreOrder[]) => void,
+  onError?: (error: Error) => void
+) {
+  const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
+  return onSnapshot(
+    q,
+    (snap) => onData(snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreOrder))),
+    (error) => {
+      console.error('subscribeAllOrdersAdmin: listener failed', error);
+      onError?.(error as unknown as Error);
+    }
+  );
+}
+
+// Every order-status change (including cancellation) is routed through the
+// adminUpdateOrderStatus Cloud Function rather than a direct client write —
+// firestore.rules denies client updates to /orders entirely (see rules
+// comment), so this is the ONLY way an admin can move an order forward.
+// Cancelling atomically restores stock and flips paymentStatus to
+// "refunded" for orders that were already paid.
+export async function updateOrderStatusAdmin(
+  orderId: string,
+  status: OrderStatus,
+  trackingNote?: string
+): Promise<void> {
+  const fn = httpsCallable(functions, 'adminUpdateOrderStatus');
+  await fn({ orderId, status, trackingNote });
+}
