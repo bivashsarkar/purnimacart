@@ -25,11 +25,11 @@ export default function BentoCollections({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-[1100px] md:h-[600px]">
+    <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 md:h-[600px]">
       {/* Large Featured Item: Summer Luxe Fashion */}
       <div 
         onClick={() => handleBentoClick('product', 'summer-luxe-lehenga')}
-        className="md:col-span-2 md:row-span-2 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md"
+        className="md:col-span-2 md:row-span-2 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md h-[320px] md:h-auto"
       >
         <img
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNYfEXK_7rLU83L70-1o6lkY-fzswn4nVWOSq68iDwQlgizS_-6l2r7xqHojeTiYP9pDAVc6sH_m9TYKlhWOzTzlfKQ9GQmH4SKX0M6ZoYWctx8Oy6PMqi3IDWIcFOi5Q4w0KvCZEWNlJAYt0UnhnxBjiUUEeBkm2ikYZQ-sMxXSnUkIIamqWxwdUTBnoPyVDLRD64sB8MnbXxqUwEPRT6uL9PYmA9S6jiveUiNMFFfG0clM11-RBMOuvSzDsbtazfyF7cm5QTCfM"
@@ -52,7 +52,7 @@ export default function BentoCollections({
       {/* Small Featured 1: Gourmet Sweets */}
       <div 
         onClick={() => handleBentoClick('product', 'caramel-sweets-box')}
-        className="md:col-span-2 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md h-[250px] md:h-auto"
+        className="md:col-span-2 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md h-[240px] md:h-auto"
       >
         <img
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlJ-VVyeEVY0-1rO_pA2W9mxzfPnLaVyYXv7yJSxhXy2yg1SwgXwdfLMpMSbrk6RtT6AckZXZVvwfAMp3-d6tlXJDWNH1HlVrMch1GKVgH0v7fCqPNO6tL7mSAbM7F0Iun23glZ9x459ao31XU03tQvkPphVilG4MY_mBUhPZRMHmkdWtnaFuQXaoToWYiSOuazPMgIFMaYDpk-YhGfbEpWgjWzBFP84ffM0Kjvwh66CXOHrGUwphcz5mNnrbIC10nt2cKP8gLgbM"
@@ -75,7 +75,7 @@ export default function BentoCollections({
       {/* Small Featured 2: Timeless Pieces */}
       <div 
         onClick={() => handleBentoClick('product', 'timeless-watch-set')}
-        className="md:col-span-1 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md h-[200px] md:h-auto"
+        className="md:col-span-1 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md h-[180px] md:h-auto"
       >
         <img
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAERFGeaAZipt_fLG-VOHdfor_-Z3fYTZI445fQkfirPe9Lvy3EtfPtFGc9y7znjcOygJ2_xR-AthCDtwIj-pQg3Y9oJlubdIxNIgB-2cdv6awg5AHyThPXzkc9eaQk2V7BoO2fMc0Dz_5k-0xGukFL20z-a7ObBdslwBie17pAtGra6Vv8iz2yr6PNPEVJzAATLM-ingR-ucc8DAPlJwMaqJqrjxkJ2pmqpBYJsLm6kOxzSViw5LaWflw-p65AAYpnmmT-u4XNuTU"
@@ -93,7 +93,7 @@ export default function BentoCollections({
       {/* Small Featured 3: Wall Art */}
       <div 
         onClick={() => handleBentoClick('product', 'gallery-wall-frames')}
-        className="md:col-span-1 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md h-[200px] md:h-auto"
+        className="md:col-span-1 relative rounded-[32px] overflow-hidden group cursor-pointer shadow-md h-[180px] md:h-auto"
       >
         <img
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmS4Kgvp2R-vE-mI7ZMasMO2DAss7YwFiQ9Ru9OrBvwGG_0RPy_0e11rLx3wj1ilJYpQnPkrN9BJTcOlkqsvuh-pxO_yeIMCK2E_1U8IcGntLNqpFuWbjHZFziJoLxPnVUXHBqlZKji9my0VmPI_L25CgWjFbQKDBCno6CbaPN1traR4v4WaLKOgpt1VU5gT4ZayP-cujt1JpC6Qbtht0tQFx2R_kZRZQFCEDMPMdTcR61KrCRWt-IKfFCubGzjzqvunfKu8G3gnE"

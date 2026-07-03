@@ -18,6 +18,7 @@ import { getActiveCoupons } from './lib/services/misc';
 import type { FirestoreCoupon } from './types/firestore';
 import { useAuth } from './context/AuthContext';
 import { useActiveProducts } from './hooks/useProducts';
+import { useActiveBanners } from './hooks/useBanners';
 import { useCategories } from './hooks/useCategories';
 import { useCart } from './hooks/useCart';
 import { useWishlist } from './hooks/useWishlist';
@@ -79,6 +80,7 @@ export default function App() {
   const { products: PRODUCTS, loading: productsLoading, error: productsError } = useActiveProducts();
   const { categories, loading: categoriesLoading } = useCategories(PRODUCTS);
   const { user, userDoc, isAdmin, loading: authLoading, signInWithGoogle } = useAuth();
+  const { banners: firestoreBanners } = useActiveBanners();
 
   // Navigation & Page State
   const [currentPage, setCurrentPage] = useState<PageType>('home');
@@ -136,12 +138,23 @@ export default function App() {
   }, []);
 
   // Hero carousel auto play
+  const totalSlides = firestoreBanners.length > 0 ? firestoreBanners.length : 3;
+
   useEffect(() => {
+    if (totalSlides <= 1) {
+      setCurrentHeroIndex(0);
+      return;
+    }
     const slideTimer = setInterval(() => {
-      setCurrentHeroIndex((prev) => (prev === 2 ? 0 : prev + 1));
+      setCurrentHeroIndex((prev) => (prev >= totalSlides - 1 ? 0 : prev + 1));
     }, 6000);
     return () => clearInterval(slideTimer);
-  }, []);
+  }, [totalSlides]);
+
+  // Reset scroll position on page changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage, selectedProductId]);
 
   const triggerToast = (message: string, type: 'success' | 'info' = 'success') => {
     setShowToast({ message, type });
@@ -297,13 +310,22 @@ export default function App() {
 
     if (!user || !isAdmin) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-5 bg-[#fff8f7] text-center px-6">
+        <div className="min-h-screen flex flex-col items-center justify-center gap-5 bg-[#fff8f7] text-center px-6 py-10">
           <h1 className="font-display font-bold text-2xl text-[#291715]">Admin Access Required</h1>
           <p className="text-xs text-[#5e3f3b]/70 max-w-sm">
             {user
               ? "You're signed in, but this account doesn't have admin access yet."
               : 'Sign in with the Google account that has admin access to continue.'}
           </p>
+          {user && (
+            <div className="bg-[#fff0ee] border border-[#e8bcb7]/30 rounded-2xl p-4 text-xs text-[#5e3f3b] max-w-sm select-all">
+              <span className="font-bold block mb-1">Your User ID (UID):</span>
+              <code className="bg-white/80 px-2.5 py-1.5 rounded-lg border border-[#e8bcb7]/25 block font-mono text-[11px] text-primary">{user.uid}</code>
+              <span className="text-[10px] opacity-70 block mt-2">
+                Copy this ID and create a document with this Document ID in the <strong>admins</strong> Firestore collection to grant access.
+              </span>
+            </div>
+          )}
           {!user && (
             <button
               onClick={() => signInWithGoogle()}
@@ -405,58 +427,72 @@ export default function App() {
         {currentPage === 'home' && (
           <div className="space-y-16">
             {/* Hero Banner Carousel Slider */}
-            <section className="relative w-full aspect-[21/9] md:aspect-[25/9] overflow-hidden rounded-[32px] bg-[#ffe9e6] shadow-xl">
+            <section className="relative w-full aspect-[16/10] sm:aspect-[21/9] md:aspect-[25/9] overflow-hidden rounded-[32px] bg-[#ffe9e6] shadow-xl">
               <div
                 className="flex transition-transform duration-700 ease-out h-full"
                 style={{ transform: `translateX(-${currentHeroIndex * 100}%)` }}
               >
-                {heroSlides.map((slide, idx) => (
-                  <div key={idx} className="min-w-full h-full relative group flex-shrink-0">
-                    <img
-                      src={slide.image}
-                      alt={slide.title}
-                      className="w-full h-full object-cover brightness-[0.85]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/10 to-transparent flex items-center px-8 md:px-16">
-                      <div className="max-w-xl text-white space-y-3 md:space-y-5">
-                        <span className="inline-block px-4 py-1.5 bg-primary text-white rounded-full text-[10px] uppercase font-bold tracking-widest font-sans shadow">
-                          {slide.subtitle}
-                        </span>
-                        <h1 className="font-display font-bold text-3xl md:text-5xl leading-tight tracking-tight drop-shadow-md">
-                          {slide.title}
-                        </h1>
-                        <p className="font-sans text-xs md:text-sm text-white/90 leading-relaxed max-w-md hidden sm:block">
-                          {slide.description}
-                        </p>
-                        <button
-                          onClick={() => {
-                            setSelectedCategory(slide.category);
-                            setCurrentPage('category');
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className="bg-primary hover:bg-[#9a000e] text-white px-6 md:px-8 py-3 rounded-xl font-bold text-xs flex items-center gap-2.5 transition-all shadow-lg shadow-primary/20 hover:translate-x-1 cursor-pointer"
-                        >
-                          {slide.cta}
-                          <ArrowRight size={14} />
-                        </button>
+                {firestoreBanners.length > 0 ? (
+                  firestoreBanners.map((slide) => (
+                    <div key={slide.id} className="min-w-full h-full relative flex-shrink-0">
+                      <img
+                        src={slide.imageUrl}
+                        alt={slide.title || 'Promotional Banner'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))
+                ) : (
+                  heroSlides.map((slide, idx) => (
+                    <div key={idx} className="min-w-full h-full relative group flex-shrink-0">
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
+                        className="w-full h-full object-cover brightness-[0.85]"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/10 to-transparent flex items-center px-8 md:px-16">
+                        <div className="max-w-xl text-white space-y-3 md:space-y-5">
+                          <span className="inline-block px-4 py-1.5 bg-primary text-white rounded-full text-[10px] uppercase font-bold tracking-widest font-sans shadow">
+                            {slide.subtitle}
+                          </span>
+                          <h1 className="font-display font-bold text-3xl md:text-5xl leading-tight tracking-tight drop-shadow-md">
+                            {slide.title}
+                          </h1>
+                          <p className="font-sans text-xs md:text-sm text-white/90 leading-relaxed max-w-md hidden sm:block">
+                            {slide.description}
+                          </p>
+                          <button
+                            onClick={() => {
+                              setSelectedCategory(slide.category);
+                              setCurrentPage('category');
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="bg-primary hover:bg-[#9a000e] text-white px-6 md:px-8 py-3 rounded-xl font-bold text-xs flex items-center gap-2.5 transition-all shadow-lg shadow-primary/20 hover:translate-x-1 cursor-pointer"
+                          >
+                            {slide.cta}
+                            <ArrowRight size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {/* Slide Bullet Controls */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-20">
-                {heroSlides.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentHeroIndex(idx)}
-                    className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                      currentHeroIndex === idx ? 'w-10 bg-primary shadow' : 'w-2.5 bg-white/45 hover:bg-white/70'
-                    }`}
-                  />
-                ))}
-              </div>
+              {totalSlides > 1 && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+                  {(firestoreBanners.length > 0 ? firestoreBanners : heroSlides).map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentHeroIndex(idx)}
+                      className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                        currentHeroIndex === idx ? 'w-10 bg-primary shadow' : 'w-2.5 bg-white/45 hover:bg-white/70'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* Shop by Category Segment */}
